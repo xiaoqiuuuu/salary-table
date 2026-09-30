@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>出勤统计</title>
+<style>
+  /* ========== Design tokens（参考 Apple Human Interface Guidelines） ========== */
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --elevated: #ffffff;
+    --label: #1d1d1f;
+    --label-2: rgba(60, 60, 67, 0.6);
+    --label-3: rgba(60, 60, 67, 0.32);
+    --separator: rgba(60, 60, 67, 0.12);
+    --fill: rgba(118, 118, 128, 0.08);
+    --fill-2: rgba(118, 118, 128, 0.12);
+    --fill-3: rgba(118, 118, 128, 0.2);
+    --thumb: #ffffff;
+    --nav-bg: rgba(245, 245, 247, 0.55);
+    --glass: rgba(255, 255, 255, 0.58);
+    --glass-strong: rgba(255, 255, 255, 0.78);
+    --glass-edge: rgba(255, 255, 255, 0.7);
+    --glass-blur: saturate(180%) blur(28px);
+    --cell: rgba(255, 255, 255, 0.82);
+    --cell-edge: rgba(0, 0, 0, 0.06);
+    --cell-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --cell-hover-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    --badge-plain: rgba(255, 255, 255, 0.75);
+    --ambient-1: rgba(0, 122, 255, 0.16);
+    --ambient-2: rgba(52, 199, 89, 0.14);
+    --ambient-3: rgba(255, 45, 85, 0.09);
+    --ambient-4: rgba(88, 86, 214, 0.12);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 12px rgba(0, 0, 0, 0.04);
+    --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.16);
+
+    --blue: #007aff;
+    --blue-press: #0062cc;
+    --red: #ff3b30;
+    --today: #ff3b30;
+
+    /* 状态色：--x 为图形色，--x-text 为满足对比度的文字色，--x-tint 为底色 */
+    --onsite: #34c759;  --onsite-text: #248a3d;  --onsite-tint: rgba(52, 199, 89, 0.15);
+    --remote: #5856d6;  --remote-text: #3634a3;  --remote-tint: rgba(88, 86, 214, 0.13);
+    --makeup: #007aff;  --makeup-text: #0040dd;  --makeup-tint: rgba(0, 122, 255, 0.09);
+    --half: #ff9500;    --half-text: #c93400;    --half-tint: rgba(255, 149, 0, 0.11);
+    --leave: #ff3b30;   --leave-text: #d70015;   --leave-tint: rgba(255, 59, 48, 0.09);
+    --holiday: #ff2d55; --holiday-text: #d30f45; --holiday-tint: rgba(255, 45, 85, 0.09);
+    --weekend: #8e8e93; --weekend-tint: rgba(142, 142, 147, 0.14);
+
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 20px;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --elevated: #2c2c2e;
+      --label: #f5f5f7;
+      --label-2: rgba(235, 235, 245, 0.6);
+      --label-3: rgba(235, 235, 245, 0.3);
+      --separator: rgba(84, 84, 88, 0.6);
+      --fill: rgba(118, 118, 128, 0.16);
+      --fill-2: rgba(118, 118, 128, 0.24);
+      --fill-3: rgba(118, 118, 128, 0.32);
+      --thumb: #636366;
+      --nav-bg: rgba(0, 0, 0, 0.45);
+      --glass: rgba(44, 44, 46, 0.5);
+      --glass-strong: rgba(44, 44, 46, 0.72);
+      --glass-edge: rgba(255, 255, 255, 0.08);
+      --cell: rgba(255, 255, 255, 0.07);
+      --cell-edge: rgba(255, 255, 255, 0.08);
+      --cell-shadow: none;
+      --cell-hover-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+      --badge-plain: rgba(255, 255, 255, 0.1);
+      --ambient-1: rgba(10, 132, 255, 0.28);
+      --ambient-2: rgba(48, 209, 88, 0.16);
+      --ambient-3: rgba(255, 55, 95, 0.14);
+      --ambient-4: rgba(94, 92, 230, 0.24);
+      --shadow-card: none;
+      --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+      --blue: #0a84ff;
+      --blue-press: #409cff;
+      --red: #ff453a;
+      --today: #ff453a;
+
+      --onsite: #30d158;  --onsite-text: #30d158;  --onsite-tint: rgba(48, 209, 88, 0.2);
+      --remote: #5e5ce6;  --remote-text: #9d9bff;  --remote-tint: rgba(94, 92, 230, 0.3);
+      --makeup: #0a84ff;  --makeup-text: #409cff;  --makeup-tint: rgba(10, 132, 255, 0.18);
+      --half: #ff9f0a;    --half-text: #ffb340;    --half-tint: rgba(255, 159, 10, 0.18);
+      --leave: #ff453a;   --leave-text: #ff6961;   --leave-tint: rgba(255, 69, 58, 0.18);
+      --holiday: #ff375f; --holiday-text: #ff6482; --holiday-tint: rgba(255, 55, 95, 0.18);
+      --weekend: #98989d; --weekend-tint: rgba(142, 142, 147, 0.2);
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.47;
+    letter-spacing: -0.01em;
+    background: var(--bg);
+    color: var(--label);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 毛玻璃背后的环境光，固定不随页面滚动 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -10vmax;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38vmax 38vmax at 12% 8%, var(--ambient-1), transparent 70%),
+      radial-gradient(34vmax 34vmax at 92% 22%, var(--ambient-4), transparent 70%),
+      radial-gradient(40vmax 40vmax at 78% 92%, var(--ambient-2), transparent 70%),
+      radial-gradient(30vmax 30vmax at 8% 78%, var(--ambient-3), transparent 70%);
+    filter: blur(20px);
+  }
+
+  button, input { font: inherit; color: inherit; letter-spacing: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--blue) 50%, transparent);
+    outline-offset: 2px;
+  }
+
+  /* ========== 导航栏 ========== */
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--separator);
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .navbar-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 52px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .text-btn {
+    border: none;
+    background: none;
+    color: var(--blue);
+    font-size: 15px;
+    padding: 6px 10px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: opacity 0.2s, background 0.2s;
+  }
+
+  .text-btn:hover { background: var(--fill); }
+  .text-btn:active { opacity: 0.5; }
+  .text-btn.strong { font-weight: 600; }
+
+  #todayBtn:not(.visible) { opacity: 0.3; pointer-events: none; }
+
+  .chevron-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--blue);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, opacity 0.2s;
+  }
+
+  .chevron-btn .icon { width: 20px; height: 20px; stroke-width: 2.4; }
+  .chevron-btn:hover { background: var(--fill); }
+  .chevron-btn:active { opacity: 0.5; }
+
+  /* ========== 页面 ========== */
+  .page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+  }
+
+  .large-title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .large-title h1 {
+    font-size: 40px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .large-title h1 .year {
+    color: var(--label-2);
+    font-weight: 600;
+    margin-left: 8px;
+    font-size: 0.6em;
+    letter-spacing: -0.02em;
+  }
+
+  .large-title p {
+    margin-top: 6px;
+    color: var(--label-2);
+    font-size: 15px;
+  }
+
+  .sync-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--label-2);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .sync-status.visible { opacity: 1; }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--fill-3);
+    border-top-color: var(--label-2);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-areas: "calendar side";
+    gap: 20px;
+    align-items: start;
+  }
+
+  .calendar-card { grid-area: calendar; }
+  .side { grid-area: side; display: flex; flex-direction: column; gap: 20px; }
+  .side-rest { display: flex; flex-direction: column; gap: 24px; }
+
+  .card {
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 0.5px solid var(--glass-edge);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  .section-label {
+    font-size: 13px;
+    color: var(--label-2);
+    padding: 0 16px 6px;
+  }
+
+  .section-footer {
+    font-size: 13px;
+    color: var(--label-2);
+    padding: 8px 16px 0;
+    line-height: 1.4;
+  }
+
+  /* ========== 日历 ========== */
+  .calendar-card { padding: 20px; }
+
+  .weekdays,
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .weekdays { margin-bottom: 8px; }
+
+  .weekdays span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--label-2);
+    padding-left: 10px;
+  }
+
+  .weekdays span.we { color: var(--label-3); }
+
+  .calendar-grid.slide-next { animation: slideNext 0.35s var(--ease); }
+  .calendar-grid.slide-prev { animation: slidePrev 0.35s var(--ease); }
+  @keyframes slideNext { from { opacity: 0; transform: translateX(16px); } }
+  @keyframes slidePrev { from { opacity: 0; transform: translateX(-16px); } }
+
+  .day-cell {
+    --tint: var(--cell);
+    --accent: var(--label);
+    --bc: var(--onsite);
+    --bt: var(--onsite-tint);
+    position: relative;
+    height: 108px;
+    padding: 10px 10px 10px 12px;
+    border-radius: var(--r-md);
+    background: var(--tint);
+    border: 0.5px solid transparent;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.25s var(--ease), box-shadow 0.25s, background 0.2s;
+  }
+
+  .day-cell:hover:not(.empty):not(.skeleton) { transform: translateY(-2px); box-shadow: var(--cell-hover-shadow); }
+  .day-cell:active:not(.empty) { transform: scale(0.97); }
+  .day-cell.changed { animation: bump 0.32s var(--ease); }
+  @keyframes bump { 40% { transform: scale(0.95); } }
+
+  .day-cell.empty { background: none; border: none; cursor: default; }
+
+  .day-cell.skeleton {
+    cursor: default;
+    background: linear-gradient(90deg, var(--fill) 0%, var(--fill-2) 50%, var(--fill) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+  .day-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .day-num {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 28px;
+    min-width: 28px;
+    height: 28px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .day-cell.today .day-num {
+    background: var(--today);
+    color: #fff;
+    border-radius: 14px;
+    text-align: center;
+    padding: 0 7px;
+    margin-left: -4px;
+  }
+
+  /* 右上角状态图标 */
+  .day-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bt);
+    color: var(--bc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .day-badge .icon { width: 15px; height: 15px; }
+
+  .day-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .day-kind {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 上班日：白色卡面，靠图标与按钮区分线下 / 线上 */
+  .s-work, .s-remote {
+    border-color: var(--cell-edge);
+    box-shadow: var(--cell-shadow);
+  }
+  .s-remote  { --bc: var(--remote); --bt: var(--remote-tint); }
+  .s-makeup  { --tint: var(--makeup-tint);  --accent: var(--makeup-text);  --bc: var(--makeup);  --bt: var(--badge-plain); }
+  .s-half    { --tint: var(--half-tint);    --accent: var(--half-text);    --bc: var(--half);    --bt: var(--badge-plain); }
+  .s-leave   { --tint: var(--leave-tint);   --accent: var(--leave-text);   --bc: var(--leave);   --bt: var(--badge-plain); }
+  .s-holiday { --tint: var(--holiday-tint); --accent: var(--holiday-text); --bc: var(--holiday); --bt: var(--badge-plain); }
+  .s-weekend { --tint: transparent;         --accent: var(--weekend);      --bc: var(--weekend); --bt: var(--weekend-tint); }
+  .s-weekend { border: 1px dashed var(--fill-3); }
+  .s-weekend .day-num { color: var(--label-3); }
+  .s-holiday .day-num, .s-leave .day-num { color: var(--accent); }
+
+  /* 线下 / 线上按钮：显示当前办公方式，点按切换 */
+  .mode-btn {
+    --mc: var(--onsite-text);
+    --mt: var(--onsite-tint);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 9px 0 11px;
+    border: none;
+    border-radius: 980px;
+    background: var(--mt);
+    color: var(--mc);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease), filter 0.2s, box-shadow 0.2s;
+  }
+
+  .mode-btn.remote { --mc: var(--remote-text); --mt: var(--remote-tint); }
+  .mode-btn .icon { width: 13px; height: 13px; }
+  .mode-btn .swap { opacity: 0.45; width: 11px; height: 11px; transition: opacity 0.2s; }
+  .mode-btn:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mc) 35%, transparent); }
+  .mode-btn:hover .swap { opacity: 0.9; }
+  .mode-btn:active { transform: scale(0.92); }
+  .mode-btn.flip { animation: flip 0.35s var(--ease); }
+  @keyframes flip { 40% { transform: scale(0.88); opacity: 0.6; } }
+
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--separator);
+    font-size: 13px;
+    color: var(--label-2);
+  }
+
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+
+  .mini-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--bt);
+    color: var(--bc);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .mini-badge .icon { width: 11px; height: 11px; }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c);
+    flex-shrink: 0;
+  }
+
+  .legend-hint { margin-left: auto; color: var(--label-3); }
+
+  /* ========== 概览 ========== */
+  .summary { padding: 20px; }
+
+  .summary-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .ring {
+    width: 116px;
+    height: 116px;
+    flex-shrink: 0;
+    transform: rotate(-90deg);
+  }
+
+  .ring circle {
+    fill: none;
+    stroke-width: 13;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s var(--ease), stroke-dashoffset 0.6s var(--ease), opacity 0.3s;
+  }
+
+  .ring .track { stroke: var(--fill-2); }
+  .ring .onsite { stroke: var(--onsite); }
+  .ring .remote { stroke: var(--remote); }
+
+  .summary-figures { flex: 1; min-width: 0; }
+
+  .summary-caption {
+    font-size: 13px;
+    color: var(--label-2);
+  }
+
+  .big-number {
+    font-size: 44px;
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .big-number small {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--label-2);
+    margin-left: 4px;
+  }
+
+  .split { margin-top: 10px; display: grid; gap: 4px; }
+
+  .split-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .split-row .name { color: var(--label-2); flex: 1; }
+  .split-row .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .split-row .val small { font-weight: 400; color: var(--label-2); margin-left: 2px; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--separator);
+  }
+
+  .metric + .metric { border-left: 0.5px solid var(--separator); padding-left: 14px; }
+
+  .metric-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--label-2);
+  }
+
+  .metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+
+  .metric-value small { font-size: 13px; font-weight: 500; color: var(--label-2); margin-left: 2px; }
+
+  /* ========== 分组列表（iOS 设置风格） ========== */
+  .group {
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 0.5px solid var(--glass-edge);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .row + .row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 16px;
+    right: 0;
+    height: 0.5px;
+    background: var(--separator);
+  }
+
+  .row label {
+    width: 56px;
+    flex-shrink: 0;
+  }
+
+  .row input {
+    flex: 1;
+    min-width: 0;
+    height: 46px;
+    border: none;
+    background: none;
+    outline: none;
+    text-align: right;
+    color: var(--label);
+  }
+
+  .row input::placeholder { color: var(--label-3); }
+  .row:focus-within { background: var(--fill); }
+
+  .row-button {
+    width: 100%;
+    border: none;
+    background: none;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .row-button:hover { background: var(--fill); }
+  .row-button:active { background: var(--fill-2); }
+  .row-button.destructive { color: var(--red); }
+
+
+  /* ========== 按钮 ========== */
+  .btn {
+    height: 44px;
+    padding: 0 22px;
+    border: none;
+    border-radius: 980px;
+    font-size: 15px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s var(--ease), opacity 0.2s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: var(--blue-press); }
+  .btn-gray { background: var(--fill-2); color: var(--blue); }
+  .btn-gray:hover { background: var(--fill-3); }
+  .btn-block { width: 100%; }
+
+  /* ========== 弹层（模态 / 底部面板） ========== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.22);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s var(--ease), visibility 0s linear 0.3s;
+  }
+
+  .overlay.active {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s var(--ease), visibility 0s;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 600px;
+    max-height: min(82vh, 760px);
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-strong);
+    -webkit-backdrop-filter: saturate(180%) blur(40px);
+    backdrop-filter: saturate(180%) blur(40px);
+    border: 0.5px solid var(--glass-edge);
+    border-radius: 16px;
+    box-shadow: var(--shadow-float);
+    transform: translateY(16px) scale(0.98);
+    transition: transform 0.4s var(--ease);
+    overflow: hidden;
+  }
+
+  .overlay.active .modal { transform: none; }
+
+  .modal-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    height: 56px;
+    padding: 0 8px;
+    border-bottom: 0.5px solid var(--separator);
+  }
+
+  .modal-header h3 { font-size: 17px; font-weight: 600; }
+  .modal-header .text-btn:first-child { justify-self: start; }
+  .modal-header .text-btn:last-child { justify-self: end; }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 20px 20px;
+  }
+
+  .mail-field {
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--separator);
+  }
+
+  .mail-field span { color: var(--label-2); flex-shrink: 0; }
+  .email-subject { font-weight: 600; }
+
+  .email-content {
+    padding-top: 16px;
+    white-space: pre-wrap;
+    line-height: 1.75;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+    border-top: 0.5px solid var(--separator);
+  }
+
+  .modal-footer .btn { flex: 1; }
+
+  /* HUD 提示 */
+  .copy-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(40px + env(safe-area-inset-bottom));
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 980px;
+    background: rgba(29, 29, 31, 0.86);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-float);
+    transform: translate(-50%, 12px) scale(0.96);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.4s var(--ease), opacity 0.25s;
+  }
+
+  .copy-toast .icon { color: #30d158; width: 18px; height: 18px; stroke-width: 2.4; }
+  .copy-toast.show { transform: translate(-50%, 0) scale(1); opacity: 1; }
+
+  /* ========== 响应式 ========== */
+  @media (max-width: 1040px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "calendar" "side";
+    }
+    .side { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.5 3 3 5.5-6"/></symbol>
+  <symbol id="i-envelope" viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h1.5M13.5 7H15M9 11h1.5M13.5 11H15M10 21v-4h4v4"/></symbol>
+  <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2.5 19.5h19"/></symbol>
+  <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M3 12.5h18"/></symbol>
+  <symbol id="i-half" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-leave" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M9.5 11.5l5 5M14.5 11.5l-5 5"/></symbol>
+  <symbol id="i-holiday" viewBox="0 0 24 24"><path d="M5 21V4M5 4.5c4-2 7 2 11 0v8c-4 2-7-2-11 0"/></symbol>
+  <symbol id="i-weekend" viewBox="0 0 24 24"><path d="M4 9h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2M12 3.5v2"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 5.5v-.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h.5"/></symbol>
+</svg>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <div class="nav-title">出勤统计</div>
+    <div class="nav-actions">
+      <button class="text-btn" id="todayBtn" onclick="goToCurrentMonth()" title="回到本月（T）">今天</button>
+      <button class="chevron-btn" onclick="changeMonth(-1)" title="上个月（←）" aria-label="上个月"><svg class="icon"><use href="#i-chevron-left"/></svg></button>
+      <button class="chevron-btn" onclick="changeMonth(1)" title="下个月（→）" aria-label="下个月"><svg class="icon"><use href="#i-chevron-right"/></svg></button>
+    </div>
+  </div>
+</nav>
+
+<main class="page">
+  <header class="large-title">
+    <div>
+      <h1><span id="monthDisplay"></span><span class="year" id="yearDisplay"></span></h1>
+      <p>点击日期切换出勤类型，点击「线下 / 线上」按钮切换办公方式</p>
+    </div>
+    <div class="sync-status" id="holidayLoading"><span class="spinner"></span>正在同步法定节假日</div>
+  </header>
+
+  <div class="layout">
+    <!-- 日历 -->
+    <section class="card calendar-card" aria-label="出勤日历">
+      <div class="weekdays">
+        <span class="we">周日</span><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span class="we">周六</span>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <aside class="side">
+      <!-- 概览 -->
+      <section class="card summary" aria-label="本月概览">
+        <div class="summary-main">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="track" cx="60" cy="60" r="50"/>
+            <circle class="remote" id="ringRemote" cx="60" cy="60" r="50" style="opacity:0"/>
+            <circle class="onsite" id="ringOnsite" cx="60" cy="60" r="50" style="opacity:0"/>
+          </svg>
+          <div class="summary-figures">
+            <div class="summary-caption">实际出勤</div>
+            <div class="big-number"><span id="statTotal">0</span><small>天</small></div>
+            <div class="split">
+              <div class="split-row"><i class="mini-badge" style="--bc:var(--onsite);--bt:var(--onsite-tint, var(--fill-2))"><svg class="icon"><use href="#i-building"/></svg></i><span class="name">线下</span><span class="val"><span id="statWork">0</span><small>天</small></span></div>
+              <div class="split-row"><i class="mini-badge" style="--bc:var(--remote);--bt:var(--remote-tint, var(--fill-2))"><svg class="icon"><use href="#i-laptop"/></svg></i><span class="name">线上</span><span class="val"><span id="statRemote">0</span><small>天</small></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label"><i class="mini-badge" style="--bc:var(--makeup);--bt:var(--makeup-tint, var(--fill-2))"><svg class="icon"><use href="#i-briefcase"/></svg></i>调休上班</div>
+            <div class="metric-value"><span id="statMakeup">0</span><small>天</small></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label"><i class="mini-badge" style="--bc:var(--half);--bt:var(--half-tint, var(--fill-2))"><svg class="icon"><use href="#i-half"/></svg></i>半天假</div>
+            <div class="metric-value"><span id="statHalf">0</span><small>次</small></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label"><i class="mini-badge" style="--bc:var(--leave);--bt:var(--leave-tint, var(--fill-2))"><svg class="icon"><use href="#i-leave"/></svg></i>请假</div>
+            <div class="metric-value"><span id="statLeave">0</span><small>天</small></div>
+          </div>
+        </div>
+        <div class="section-footer" style="padding:14px 0 0">实际出勤 = 线下 + 线上。调休上班已计入其中，半天假的另外半天按 0.5 天计。</div>
+      </section>
+
+      <div class="side-rest">
+        <!-- 个人信息 -->
+        <section>
+          <div class="section-label">个人信息</div>
+          <div class="group">
+            <div class="row">
+              <label for="infoName">姓名</label>
+              <input type="text" id="infoName" placeholder="必填" autocomplete="name" oninput="saveInfo()">
+            </div>
+            <div class="row">
+              <label for="infoDept">部门</label>
+              <input type="text" id="infoDept" placeholder="请输入部门" autocomplete="organization-title" oninput="saveInfo()">
+            </div>
+            <div class="row">
+              <label for="infoId">工号</label>
+              <input type="text" id="infoId" placeholder="可选" oninput="saveInfo()">
+            </div>
+          </div>
+          <div class="section-footer">仅保存在此设备，用于邮件署名。</div>
+        </section>
+
+        <!-- 操作 -->
+        <section>
+          <button class="btn btn-primary btn-block" onclick="showEmailPreview()"><svg class="icon"><use href="#i-envelope"/></svg>生成出勤邮件</button>
+          <div class="group" style="margin-top:16px">
+            <button class="row row-button destructive" onclick="resetMonth()">重置本月数据</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- 邮件预览 -->
+<div class="overlay" id="emailModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="emailModalTitle">
+    <div class="modal-header">
+      <button class="text-btn" onclick="closeModal()">关闭</button>
+      <h3 id="emailModalTitle">邮件预览</h3>
+      <button class="text-btn strong" onclick="copyEmail()">复制</button>
+    </div>
+    <div class="modal-body">
+      <div class="mail-field"><span>主题：</span><div class="email-subject" id="emailSubject"></div></div>
+      <div class="email-content" id="emailContent"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="copyEmail()"><svg class="icon"><use href="#i-copy"/></svg>复制正文</button>
+      <button class="btn btn-primary" id="mailClientBtn" onclick="openMailClient()"><svg class="icon"><use href="#i-envelope"/></svg>打开邮件客户端</button>
+    </div>
+  </div>
+</div>
+
+<div class="copy-toast" id="copyToast" role="status" aria-live="polite"><svg class="icon"><use href="#i-check-circle"/></svg><span id="copyToastText">已复制到剪贴板</span></div>
+
+<script>
+// State
+let currentYear, currentMonth; // month is 0-indexed
+let attendanceData = {}; // { "2026-04": { 1: "work", 2: "half", ... } }
+
+// 使用 chinese-holidays 发布的按年份数据，不在页面内写死日期。
+// npm 包本身是 CommonJS，浏览器端直接读取它发布的 data/{year}.json。
+const HOLIDAY_DATA_URLS = [
+  'https://cdn.jsdelivr.net/npm/chinese-holidays@latest/data/{year}.json',
+  'https://raw.githubusercontent.com/bastengao/chinese-holidays-data/master/data/{year}.json',
+];
+const holidayDataByYear = {};
+const holidayDataRequests = {};
+
+function dateKey(year, month, day) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function addEventDates(target, range) {
+  const [startYear, startMonth, startDay] = range[0].split('-').map(Number);
+  const [endYear, endMonth, endDay] = (range[1] || range[0]).split('-').map(Number);
+  const current = new Date(startYear, startMonth - 1, startDay);
+  const end = new Date(endYear, endMonth - 1, endDay);
+
+  while (current <= end) {
+    target.add(dateKey(current.getFullYear(), current.getMonth() + 1, current.getDate()));
+    current.setDate(current.getDate() + 1);
+  }
+}
+
+function parseHolidayEvents(events) {
+  const result = { holidays: new Set(), workingdays: new Set() };
+  events.forEach(event => {
+    if (!event || !Array.isArray(event.range) || !event.range.length) return;
+    const target = event.type === 'workingday' ? result.workingdays : result.holidays;
+    addEventDates(target, event.range);
+  });
+  return result;
+}
+
+async function loadHolidayData(year) {
+  if (holidayDataByYear[year]) return holidayDataByYear[year];
+  if (holidayDataRequests[year]) return holidayDataRequests[year];
+
+  holidayDataRequests[year] = (async () => {
+    for (const template of HOLIDAY_DATA_URLS) {
+      const url = template.replace('{year}', year);
+      try {
+        const response = await fetch(url);
+        if (!response.ok) continue;
+        const events = await response.json();
+        holidayDataByYear[year] = parseHolidayEvents(events);
+        return holidayDataByYear[year];
+      } catch (error) {
+        // 尝试下一个数据源。
+      }
+    }
+
+    console.warn(`无法加载 ${year} 年节假日数据`);
+    // 网络不可用时保留空数据，用户仍可像以前一样手动调整日期。
+    holidayDataByYear[year] = { holidays: new Set(), workingdays: new Set() };
+    return holidayDataByYear[year];
+  })();
+
+  return holidayDataRequests[year];
+}
+
+// 每天的状态 = 类型(kind) + 办公方式(mode)。
+// 存储时编码为字符串以兼容旧数据：'work' / 'remote'(线上上班) / 'makeup' / 'makeup-remote' / 'half' / 'half-remote' / 'leave' / 'holiday' / 'weekend'
+const MODE_KINDS = ['work', 'makeup', 'half']; // 需要区分线下/线上的类型
+// Weekday cycle: work -> half -> leave -> holiday -> work
+const WEEKDAY_CYCLE = ['work', 'half', 'leave', 'holiday'];
+// Weekend cycle: weekend -> makeup -> holiday -> weekend
+const WEEKEND_CYCLE = ['weekend', 'makeup', 'holiday'];
+// 法定调休上班日：makeup -> half -> leave -> weekend -> makeup
+const MAKEUP_DAY_CYCLE = ['makeup', 'half', 'leave', 'weekend'];
+
+const KIND_LABEL = { work: '上班', makeup: '调休上班', half: '半天假', leave: '请假', holiday: '节假日', weekend: '周末' };
+const MODE_LABEL = { onsite: '线下', remote: '线上' };
+const LEGEND = [
+  ['onsite', '线下上班'], ['remote', '线上上班'], ['makeup', '调休上班'],
+  ['half', '半天假'], ['leave', '请假'], ['holiday', '节假日'], ['weekend', '周末'],
+];
+const KIND_ICON = { makeup: 'briefcase', half: 'half', leave: 'leave', holiday: 'holiday', weekend: 'weekend' };
+
+function stateIcon(state) {
+  if (state.kind === 'work') return state.mode === 'onsite' ? 'building' : 'laptop';
+  return KIND_ICON[state.kind];
+}
+
+function iconSvg(name) {
+  return `<svg class="icon"><use href="#i-${name}"/></svg>`;
+}
+
+function parseStatus(value) {
+  if (value === 'remote') return { kind: 'work', mode: 'remote' };
+  const [kind, mode] = String(value).split('-');
+  return { kind: KIND_LABEL[kind] ? kind : 'work', mode: mode === 'remote' ? 'remote' : 'onsite' };
+}
+
+function encodeStatus(kind, mode) {
+  if (!MODE_KINDS.includes(kind) || mode !== 'remote') return kind;
+  return kind === 'work' ? 'remote' : `${kind}-remote`;
+}
+
+// Init
+async function init() {
+  // 自动读取当前时间，默认显示本月
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+
+  // Load saved data
+  const saved = localStorage.getItem('salary_attendance');
+  if (saved) {
+    try { attendanceData = JSON.parse(saved); } catch(e) {}
+  }
+
+  // Load personal info
+  const info = localStorage.getItem('salary_info');
+  if (info) {
+    try {
+      const d = JSON.parse(info);
+      document.getElementById('infoName').value = d.name || '';
+      document.getElementById('infoDept').value = d.dept || '';
+      document.getElementById('infoId').value = d.id || '';
+    } catch(e) {}
+  }
+
+  renderLegend();
+  renderMonthDisplay();
+  renderSkeleton();
+  await ensureHolidayData(currentYear);
+  render();
+}
+
+// 节假日数据返回前先显示占位格，避免状态闪变
+function renderSkeleton() {
+  const grid = document.getElementById('calendarGrid');
+  const offset = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  grid.innerHTML = '<div class="day-cell empty"></div>'.repeat(offset)
+    + '<div class="day-cell skeleton"></div>'.repeat(daysInMonth);
+}
+
+// 加载节假日数据，并在加载过程中显示提示
+async function ensureHolidayData(year) {
+  const tag = document.getElementById('holidayLoading');
+  if (!holidayDataByYear[year]) tag.classList.add('visible');
+  await loadHolidayData(year);
+  if (holidayDataByYear[currentYear]) tag.classList.remove('visible');
+}
+
+function getMonthKey(y, m) {
+  return `${y}-${String(m + 1).padStart(2, '0')}`;
+}
+
+function isWeekendDate(year, month, day) {
+  const dow = new Date(year, month, day).getDay();
+  return dow === 0 || dow === 6;
+}
+
+function isOfficialMakeupDay(year, month, day) {
+  const holidayData = holidayDataByYear[year];
+  return !!(holidayData && holidayData.workingdays.has(dateKey(year, month + 1, day)));
+}
+
+function getDefaultStatus(year, month, day) {
+  const holidayData = holidayDataByYear[year];
+  if (holidayData && holidayData.holidays.has(dateKey(year, month + 1, day))) return 'holiday';
+  if (isOfficialMakeupDay(year, month, day)) return 'makeup';
+  return isWeekendDate(year, month, day) ? 'weekend' : 'work';
+}
+
+function getCycle(year, month, day) {
+  if (isOfficialMakeupDay(year, month, day)) return MAKEUP_DAY_CYCLE;
+  return isWeekendDate(year, month, day) ? WEEKEND_CYCLE : WEEKDAY_CYCLE;
+}
+
+// 返回某天的 { kind, mode }
+function getDayState(monthData, day, year, month) {
+  const raw = Object.prototype.hasOwnProperty.call(monthData, day)
+    ? monthData[day]
+    : getDefaultStatus(year, month, day);
+  const state = parseStatus(raw);
+  // 周末或法定调休日上班即为调休上班（兼容旧数据中存为 work/remote 的情况）
+  if (state.kind === 'work' && (isWeekendDate(year, month, day) || isOfficialMakeupDay(year, month, day))) {
+    state.kind = 'makeup';
+  }
+  return state;
+}
+
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  render();
+  animateGrid(delta > 0 ? 'next' : 'prev');
+  ensureHolidayData(currentYear).then(render);
+}
+
+function goToCurrentMonth() {
+  const now = new Date();
+  const delta = (now.getFullYear() - currentYear) * 12 + now.getMonth() - currentMonth;
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+  render();
+  if (delta) animateGrid(delta > 0 ? 'next' : 'prev');
+  ensureHolidayData(currentYear).then(render);
+}
+
+function animateGrid(direction) {
+  const grid = document.getElementById('calendarGrid');
+  grid.classList.remove('slide-next', 'slide-prev');
+  void grid.offsetWidth; // 重新触发动画
+  grid.classList.add(`slide-${direction}`);
+}
+
+function render() {
+  renderMonthDisplay();
+  renderCalendar();
+  renderStats();
+}
+
+function renderMonthDisplay() {
+  document.getElementById('monthDisplay').textContent = `${currentMonth + 1}月`;
+  document.getElementById('yearDisplay').textContent = `${currentYear}年`;
+  document.title = `${currentYear}年${currentMonth + 1}月 · 出勤统计`;
+  const now = new Date();
+  const isCurrent = now.getFullYear() === currentYear && now.getMonth() === currentMonth;
+  document.getElementById('todayBtn').classList.toggle('visible', !isCurrent);
+}
+
+function renderLegend() {
+  document.getElementById('legend').innerHTML = LEGEND
+    .map(([cls, label]) => {
+      const icon = cls === 'onsite' ? 'building' : cls === 'remote' ? 'laptop' : KIND_ICON[cls];
+      return `<span class="legend-item"><i class="mini-badge" style="--bc:var(--${cls});--bt:var(--${cls}-tint)">${iconSvg(icon)}</i>${label}</span>`;
+    })
+    .join('')
+    + `<span class="legend-hint">← → 切换月份</span>`;
+}
+
+function stateClass(state) {
+  if (state.kind === 'work') return state.mode === 'remote' ? 's-remote' : 's-work';
+  return `s-${state.kind}`;
+}
+
+function stateLabel(state) {
+  if (state.kind === 'work') return `${MODE_LABEL[state.mode]}上班`;
+  if (state.kind === 'makeup') return `调休上班（${MODE_LABEL[state.mode]}）`;
+  if (state.kind === 'half') return `半天假（另半天${MODE_LABEL[state.mode]}）`;
+  return KIND_LABEL[state.kind];
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  const key = getMonthKey(currentYear, currentMonth);
+  const monthData = attendanceData[key] || {};
+
+  // First day of month (0=Sun), Sun-based layout: Sun=0 ... Sat=6
+  const offset = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  const now = new Date();
+  const todayDay = now.getFullYear() === currentYear && now.getMonth() === currentMonth ? now.getDate() : -1;
+
+  // Empty cells
+  for (let i = 0; i < offset; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell empty';
+    grid.appendChild(cell);
+  }
+
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const state = getDayState(monthData, d, currentYear, currentMonth);
+    const cycle = getCycle(currentYear, currentMonth, d);
+    const nextKind = cycle[(cycle.indexOf(state.kind) + 1) % cycle.length];
+    const hasMode = MODE_KINDS.includes(state.kind);
+
+    const cell = document.createElement('div');
+    cell.className = `day-cell ${stateClass(state)}${d === todayDay ? ' today' : ''}`;
+    cell.dataset.day = d;
+    cell.tabIndex = 0;
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', `${currentMonth + 1}月${d}日，${stateLabel(state)}`);
+    cell.title = `${stateLabel(state)} · 点按切换为「${KIND_LABEL[nextKind]}」`;
+    cell.innerHTML = `<div class="day-top"><span class="day-num">${d}</span>`
+      + `<span class="day-badge">${iconSvg(stateIcon(state))}</span></div>`;
+
+    // 底部：上班类显示线下/线上按钮（调休、半天假再附类型文字），其余只显示类型文字
+    const bottom = document.createElement('div');
+    bottom.className = 'day-bottom';
+    if (hasMode) bottom.appendChild(createModeButton(d, state));
+    if (state.kind !== 'work') bottom.insertAdjacentHTML('beforeend', `<span class="day-kind">${KIND_LABEL[state.kind]}</span>`);
+    cell.appendChild(bottom);
+
+    cell.onclick = () => toggleDay(d);
+    cell.onkeydown = (e) => {
+      if (e.target !== cell) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cell.onclick(); }
+    };
+
+    grid.appendChild(cell);
+  }
+}
+
+function setDayState(day, kind, mode, focusSelector) {
+  const key = getMonthKey(currentYear, currentMonth);
+  if (!attendanceData[key]) attendanceData[key] = {};
+  attendanceData[key][day] = encodeStatus(kind, mode);
+
+  saveData();
+  render();
+
+  const cell = document.querySelector(`#calendarGrid .day-cell[data-day="${day}"]`);
+  if (cell) cell.classList.add('changed');
+
+  // 重新渲染后保持键盘焦点
+  if (document.activeElement === document.body) {
+    const target = document.querySelector(`#calendarGrid .day-cell[data-day="${day}"] ${focusSelector}`.trim())
+      || document.querySelector(`#calendarGrid .day-cell[data-day="${day}"]`);
+    if (target) target.focus();
+  }
+}
+
+// 点击格子：切换类型，办公方式保持不变
+function toggleDay(day) {
+  const monthData = attendanceData[getMonthKey(currentYear, currentMonth)] || {};
+  const state = getDayState(monthData, day, currentYear, currentMonth);
+  const cycle = getCycle(currentYear, currentMonth, day);
+  const next = cycle[(cycle.indexOf(state.kind) + 1) % cycle.length];
+  setDayState(day, next, state.mode, '');
+}
+
+// 线下 / 线上按钮：显示当前办公方式，点按切换到另一种
+function createModeButton(day, state) {
+  const other = state.mode === 'onsite' ? 'remote' : 'onsite';
+  const prefix = state.kind === 'half' ? '另外半天' : '';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = `mode-btn ${state.mode}`;
+  btn.title = `${prefix}${MODE_LABEL[state.mode]}办公 · 点按切换为${MODE_LABEL[other]}`;
+  btn.setAttribute('aria-label', btn.title);
+  btn.innerHTML = `<span>${MODE_LABEL[state.mode]}</span><svg class="icon swap"><use href="#i-swap"/></svg>`;
+  btn.onclick = (e) => { e.stopPropagation(); toggleMode(day); };
+  return btn;
+}
+
+function toggleMode(day) {
+  const monthData = attendanceData[getMonthKey(currentYear, currentMonth)] || {};
+  const state = getDayState(monthData, day, currentYear, currentMonth);
+  setDayState(day, state.kind, state.mode === 'onsite' ? 'remote' : 'onsite', '.mode-btn');
+  const btn = document.querySelector(`#calendarGrid .day-cell[data-day="${day}"] .mode-btn`);
+  if (btn) btn.classList.add('flip');
+}
+
+// 汇总当月数据，供统计卡片与邮件共用
+function summarizeMonth() {
+  const monthData = attendanceData[getMonthKey(currentYear, currentMonth)] || {};
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const r = {
+    onsite: 0, remote: 0,            // 折算天数（含调休与半天假的另半天）
+    onsiteFull: [], remoteFull: [], // 整天上班日期（含调休）
+    half: [], makeup: 0, leave: 0, holiday: 0,
+  };
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const state = getDayState(monthData, d, currentYear, currentMonth);
+    const tag = `${currentMonth + 1}/${d}`;
+    if (state.kind === 'work' || state.kind === 'makeup') {
+      r[state.mode] += 1;
+      (state.mode === 'onsite' ? r.onsiteFull : r.remoteFull).push(state.kind === 'makeup' ? `${tag}（调休）` : tag);
+      if (state.kind === 'makeup') r.makeup++;
+    } else if (state.kind === 'half') {
+      r[state.mode] += 0.5;
+      r.half.push(`${tag}（另半天${MODE_LABEL[state.mode]}）`);
+    } else if (state.kind === 'leave') r.leave++;
+    else if (state.kind === 'holiday') r.holiday++;
+  }
+
+  r.total = r.onsite + r.remote;
+  return r;
+}
+
+function fmtDays(n) {
+  return n % 1 === 0 ? String(n) : n.toFixed(1);
+}
+
+function renderStats() {
+  const r = summarizeMonth();
+  document.getElementById('statTotal').textContent = fmtDays(r.total);
+  document.getElementById('statWork').textContent = fmtDays(r.onsite);
+  document.getElementById('statRemote').textContent = fmtDays(r.remote);
+  document.getElementById('statMakeup').textContent = r.makeup;
+  document.getElementById('statHalf').textContent = r.half.length;
+  document.getElementById('statLeave').textContent = r.leave;
+  renderRing(r);
+}
+
+// 环形图：线下（绿）与线上（紫）占实际出勤的比例
+function renderRing(r) {
+  const C = 2 * Math.PI * 50;
+  const gap = r.onsite && r.remote ? 14 : 0; // 两段之间留出圆角端点的间隙
+  const onsiteLen = r.total ? Math.max(C * r.onsite / r.total - gap, 0.01) : 0;
+  const remoteLen = r.total ? Math.max(C * r.remote / r.total - gap, 0.01) : 0;
+  const onsite = document.getElementById('ringOnsite');
+  const remote = document.getElementById('ringRemote');
+  onsite.style.strokeDasharray = `${onsiteLen} ${C}`;
+  onsite.style.opacity = r.onsite ? 1 : 0;
+  remote.style.strokeDasharray = `${remoteLen} ${C}`;
+  remote.style.strokeDashoffset = -(C * r.onsite / (r.total || 1));
+  remote.style.opacity = r.remote ? 1 : 0;
+}
+
+function resetMonth() {
+  if (!confirm(`确定要重置 ${currentYear}年${currentMonth + 1}月 的出勤数据吗？`)) return;
+  const key = getMonthKey(currentYear, currentMonth);
+  delete attendanceData[key];
+  saveData();
+  render();
+}
+
+function saveData() {
+  localStorage.setItem('salary_attendance', JSON.stringify(attendanceData));
+}
+
+function saveInfo() {
+  localStorage.setItem('salary_info', JSON.stringify({
+    name: document.getElementById('infoName').value,
+    dept: document.getElementById('infoDept').value,
+    id: document.getElementById('infoId').value,
+  }));
+}
+
+// ===== 弹层通用 =====
+let lastFocus = null;
+
+function openOverlay(id) {
+  lastFocus = document.activeElement;
+  document.getElementById(id).classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeOverlay(id) {
+  const overlay = document.getElementById(id);
+  if (!overlay.classList.contains('active')) return;
+  overlay.classList.remove('active');
+  if (!document.querySelector('.overlay.active')) document.body.style.overflow = '';
+  if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+}
+
+function formatDateList(list, perLine = 8) {
+  // 每行放多个日期，用顿号分隔
+  const lines = [];
+  for (let i = 0; i < list.length; i += perLine) {
+    lines.push('  ' + list.slice(i, i + perLine).join('、'));
+  }
+  return lines.join('\n');
+}
+
+// Email
+function generateEmail() {
+  const name = document.getElementById('infoName').value || '___';
+  const monthStr = `${currentYear}年${currentMonth + 1}月`;
+  const r = summarizeMonth();
+
+  const subject = `${monthStr}出勤统计 - ${name}`;
+
+  let body = `您好，\n\n以下是我${monthStr}的出勤统计：\n\n`;
+  body += `本月出勤：${fmtDays(r.total)} 天（线下 ${fmtDays(r.onsite)} 天，线上 ${fmtDays(r.remote)} 天）\n\n`;
+
+  body += `线下上班（${r.onsiteFull.length}天）：\n`;
+  body += formatDateList(r.onsiteFull);
+  body += '\n';
+
+  if (r.remoteFull.length > 0) {
+    body += `\n线上上班（${r.remoteFull.length}天）：\n`;
+    body += formatDateList(r.remoteFull);
+    body += '\n';
+  }
+
+  if (r.half.length > 0) {
+    body += `\n出勤半天（${r.half.length}天）：\n`;
+    body += formatDateList(r.half, 4);
+    body += '\n';
+  }
+
+  body += `\n请查收，谢谢！\n`;
+  body += `${name}`;
+
+  return { subject, body };
+}
+
+function showEmailPreview() {
+  const { subject, body } = generateEmail();
+  document.getElementById('emailSubject').textContent = subject;
+  document.getElementById('emailContent').textContent = body;
+  openOverlay('emailModal');
+  document.getElementById('mailClientBtn').focus({ preventScroll: true });
+}
+
+function closeModal() {
+  closeOverlay('emailModal');
+}
+
+function copyEmail() {
+  const { subject, body } = generateEmail();
+  const text = `主题：${subject}\n\n${body}`;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制到剪贴板');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('已复制到剪贴板');
+  });
+}
+
+function openMailClient() {
+  const { subject, body } = generateEmail();
+  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(mailto);
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('copyToast');
+  document.getElementById('copyToastText').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// Close overlays on backdrop click
+document.getElementById('emailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Keyboard: Esc 关闭弹层；← → 切换月份；T 回到本月
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeModal(); return; }
+  if (document.querySelector('.overlay.active')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if (e.key === 'ArrowLeft') changeMonth(-1);
+  else if (e.key === 'ArrowRight') changeMonth(1);
+  else if (e.key === 't' || e.key === 'T') goToCurrentMonth();
+});
+
+init();
+</script>
+</body>
+</html>
