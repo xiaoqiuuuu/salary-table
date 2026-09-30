@@ -815,6 +815,93 @@
     .side { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
   }
 
+  /* 窄屏（企微群看板 / 侧边栏 / 手机）：每格只保留日期 + 一个信息，按钮撑满格宽 */
+  @media (max-width: 560px) {
+    .navbar-inner { padding: 0 8px 0 16px; height: 46px; }
+    .page { padding: 16px 10px 40px; }
+    .large-title { margin-bottom: 14px; padding: 0 4px; }
+    .large-title h1 { font-size: 28px; }
+    .large-title p { font-size: 12px; }
+
+    .page {
+      padding-left: calc(10px + env(safe-area-inset-left));
+      padding-right: calc(10px + env(safe-area-inset-right));
+      padding-bottom: calc(40px + env(safe-area-inset-bottom));
+    }
+    .large-title { flex-wrap: wrap; align-items: flex-start; gap: 6px; }
+
+    .layout { gap: 14px; }
+    .side { display: flex; align-items: stretch; }
+    /* iOS 输入框字号 < 16px 时聚焦会自动放大页面 */
+    .row input { font-size: 16px; }
+    .calendar-card { padding: 10px 8px; }
+    .weekdays, .calendar-grid { gap: 4px; }
+    .weekdays span { padding-left: 0; text-align: center; font-size: 11px; }
+
+    .day-cell {
+      height: 62px;
+      padding: 5px 4px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .day-cell:hover:not(.empty):not(.skeleton) { transform: none; box-shadow: none; }
+    .day-top { align-items: center; gap: 2px; }
+    .day-num { font-size: 15px; line-height: 22px; height: 22px; min-width: 0; padding-left: 2px; }
+    .day-cell.today .day-num { border-radius: 11px; padding: 0 5px; margin-left: 0; }
+
+    /* 状态图标只留给调休 / 半天假（这两种底部显示的是办公方式按钮） */
+    .day-badge { display: none; width: 16px; height: 16px; }
+    .day-badge .icon { width: 10px; height: 10px; }
+    .s-makeup .day-badge, .s-half .day-badge { display: flex; }
+
+    .day-bottom { justify-content: center; }
+    .day-bottom .mode-btn + .day-kind { display: none; }
+    .day-kind { font-size: 10px; flex-shrink: 1; min-width: 0; }
+
+    .mode-btn { width: 100%; height: 22px; padding: 0 2px; justify-content: center; font-size: 11px; }
+    .mode-btn .swap { display: none; }
+
+    .legend { gap: 6px 12px; margin-top: 12px; padding-top: 12px; font-size: 12px; }
+    .legend-hint { display: none; }
+
+    .summary { padding: 16px; }
+    .summary-main { gap: 16px; }
+    .ring { width: 88px; height: 88px; }
+    .big-number { font-size: 36px; }
+    .metric + .metric { padding-left: 10px; }
+    .metric-value { font-size: 20px; }
+
+    /* 邮件预览改为底部弹出面板 */
+    .overlay { align-items: flex-end; padding: 0; }
+    .modal {
+      max-width: none;
+      max-height: 88vh;
+      max-height: 88dvh;
+      border-radius: 16px 16px 0 0;
+      border-bottom: none;
+      transform: translateY(100%);
+    }
+    .modal-body { padding: 4px 16px 16px; }
+    .modal-footer { padding-left: 16px; padding-right: 16px; }
+  }
+
+  /* 极窄（≤ 380px，如小屏手机）：格子放不下图标，只靠底色区分 */
+  @media (max-width: 380px) {
+    .s-makeup .day-badge, .s-half .day-badge { display: none; }
+    .weekdays span { font-size: 10px; }
+    .day-num { font-size: 14px; }
+    .mode-btn { font-size: 10px; }
+  }
+
+  /* 触屏设备：去掉悬停效果，避免点按后卡在悬停状态 */
+  @media (hover: none) {
+    .day-cell:hover:not(.empty):not(.skeleton) { transform: none; box-shadow: none; }
+    .mode-btn:hover { box-shadow: none; }
+    .btn-primary:hover { background: var(--blue); }
+    .btn-gray:hover, .text-btn:hover, .chevron-btn:hover, .row-button:hover { background: none; }
+    .btn-gray:hover { background: var(--fill-2); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
